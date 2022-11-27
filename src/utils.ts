@@ -5,6 +5,13 @@ import { Collection } from "./collection";
 export const select = <T, K extends keyof T = keyof T>(object: T, keys: K[]): Record<K, any> =>
     keys.reduce((acc, cur) => ({ ...acc, [cur]: object[cur] }), {} as any);
 
+
+export const omit = <T extends Record<string, any>, K extends keyof T>(obj: T | undefined, keys: K[]) => {
+    if (!obj) return {};
+    Object.keys(obj).forEach(k => delete obj[k]);
+    return obj;
+}
+
 export type RequestData = { params?: object, body?: object, form?: FormData, headers?: Record<string, string> };
 
 export const request = (path: string, data: RequestData, method = "GET") => {
@@ -23,7 +30,7 @@ export const request = (path: string, data: RequestData, method = "GET") => {
 
     // @ts-ignore
     if (data.params) for (let key in data.params) query.set(key, data.params[key]);
-    
+
     if (authStore.token && authStore.admin)
         (options.headers as any)["Authorization"] = authStore.token;
 

@@ -36,7 +36,7 @@ async function main() {
 
     const postsCol = collection("posts", postSchema);
     const posts = await list(postsCol);
-    
+
     console.log(posts);
 }
 
