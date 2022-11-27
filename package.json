@@ -1,0 +1,10 @@
+{
+  "name": "pocketbase-orm",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^4.9.3"
+  }
+}

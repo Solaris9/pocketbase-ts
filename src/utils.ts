@@ -1,0 +1,34 @@
+import { authStore } from "./auth";
+import { pocketBaseURL } from "./client";
+import { Collection } from "./collection";
+
+export const select = <T, K extends keyof T = keyof T>(object: T, keys: K[]): Record<K, any> =>
+    keys.reduce((acc, cur) => ({ ...acc, [cur]: object[cur] }), {} as any);
+
+export type RequestData = { params?: object, body?: object, form?: FormData, headers?: Record<string, string> };
+
+export const request = (path: string, data: RequestData, method = "GET") => {
+    const options: RequestInit = { method, headers: data.headers };
+    const query = new URLSearchParams();
+
+    if (!options.headers) options.headers = {};
+
+    if (data.form) {
+        options.body = data.form;
+        (options.headers as any)["Content-Type"] = "multipart/form-data";
+    } else if (data.body) {
+        options.body = JSON.stringify(data.body);
+        (options.headers as any)["Content-Type"] = "application/json";
+    }
+
+    // @ts-ignore
+    if (data.params) for (let key in data.params) query.set(key, data.params[key]);
+    
+    if (authStore.token && authStore.admin)
+        (options.headers as any)["Authorization"] = authStore.token;
+
+    const url = `${pocketBaseURL}/api/${path}?${query}`;
+    return fetch(url, options);
+};
+
+export const getFileUrl = <T>(collection: Collection<T>, id: string, file: string) => `${pocketBaseURL}/api/files/${collection.identifier}/${id}/${file}`;
