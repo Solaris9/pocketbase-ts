@@ -4,27 +4,29 @@ Note: This is a work in progress, this should not be used until it close to rele
 
 A simplified PocketBase SDK to ease the developer experience.
 
-## features
+## Features
 
 - Modular API
 - Strongly typed schema
 
 ## Roadmap/Todo
 
-[] Finish rest of the PocketBase API
-[] Add authentication
-[] Clean up code significantly
+- [ ] Finish rest of the PocketBase API
+- [x] Add authentication
+- [ ] Clean up code significantly
+- [ ] Add realtime records
+- [ ] Add base schema for Users & Admins
 
 ## Usage
 
 This is using the demo on the [pocketbase.io](https://pocketbase.io/demo) site.
 
 ```typescript
-import { init, collection, list, schema, Type, adminAuthWithPassword } from "pocketbase-orm";
+import { init, collection, list, schema, Type, authPassword, Admins } from "pocketbase-orm";
 
 async function main() {
     init("https://pocketbase.io");
-    await adminAuthWithPassword("test@example.com", "123456");
+    await authPassword(Admins, "test@example.com", "123456");
 
     const postSchema = schema({
         title: Type.text({ required: true }),

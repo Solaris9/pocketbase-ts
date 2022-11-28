@@ -1,8 +1,10 @@
-import { authStore } from "./auth";
-import { pocketBaseURL } from "./client";
+import { ExtractCollectionGeneric, pocketBaseURL, Resource } from "./client";
 import { Document, Schema, SchemaDefinition } from "./model";
 import { SchemaField } from "./types";
 import { request, RequestData } from "./utils";
+import type { SetRequired } from "type-fest";
+
+//#region collection
 
 export type BaseDoc = {
     id: string;
@@ -10,87 +12,117 @@ export type BaseDoc = {
     updated: string;
 };
 
-export type Doc<T> = T & BaseDoc;
-
-export type Collection<T> = {
-    identifier: string;
-    definition: {
+export type Collection<T> = Resource & {
+    identifier?: string;
+    definition?: {
         name: string;
         type: "base" | string;
         schema: SchemaField[];
-    } | null;
-};
-
-export const collection = <T>(identifier: string, schema?: SchemaDefinition<T>): Collection<Schema<T>> => {
-    if (!pocketBaseURL) throw new Error("init has not been called");
-    let definition: Collection<T>["definition"] | null = null;
-    if (schema) definition = { name: identifier, type: "base", schema: schema.fields };
-    return { identifier, definition };
-};
-
-export const get = async <T>(collection: Collection<T>, id: string, expand?: string): Promise<Document<T & BaseDoc>> => {
-    if (!pocketBaseURL) throw new Error("init has not been called");
-
-    const path = `collections/${collection.identifier}/records/${id}`;
-    const res = await request(path, { params: { expand } });
-    const json = await res.json();
-    
-    delete json["collectionId"];
-    delete json["collectionName"];
-
-    return json;
+    };
 }
 
-export const create = async <T>(collection: Collection<T>, data: Document<T & BaseDoc>): Promise<Document<T & BaseDoc>> => {
+export const collection = <T>(identifier: string, schema: SchemaDefinition<T>): SetRequired<Collection<Document<Schema<T>>>, "definition"> => {
+    let definition = { name: identifier, type: "base", schema: schema.fields };
+    
+    const collection = {
+        path: `/api/collections/${identifier}/records`,
+        definition,
+        identifier
+    }
+
+    return collection;
+}
+
+//#endregion
+
+//#region get
+
+export const get = async <T extends Resource>(resource: T, id: string): Promise<ExtractCollectionGeneric<T>> => {
+    if (!pocketBaseURL) throw new Error("init has not been called");
+    return await request<ExtractCollectionGeneric<T>>(`${resource.path}/${id}`, {});
+}
+
+//#endregion
+
+//#region create
+
+type Create = {
+    /** Create record using a object literal. Cannot upload files. */
+    <T>(collection: Collection<T>, data: Record<string, any>): Promise<Document<T & BaseDoc>>;
+    /** Create record using a object literal. Cannot upload files. */
+    <T>(collection: Collection<T>, data: Document<T & BaseDoc>): Promise<Document<T & BaseDoc>>;
+    /** Create record using a FormData to upload files. */
+    <T>(collection: Collection<T>, data: FormData): Promise<Document<T & BaseDoc>>;
+}
+
+export const create: Create = async(collection, data) => {
     if (!pocketBaseURL) throw new Error("init has not been called");
 
     const options: RequestData = { };
 
-    // if (data.constructor == FormData) options.form = data;
-    // else
-        options.body = data;
+    if (data.constructor == FormData) options.form = data;
+    else options.body = data;
 
-    const path = `collections/${collection.identifier}/records`;
-    const res = await request(path, options, "POST");
-    const json = await res.json();
-    
-    return json;
+    return await request(collection.path, options, "POST");
 }
+
+//#endregion
+
+//#region update
+
+type Update = {
+    /** Create record using a FormData to upload files. */
+    <T>(collection: Collection<T>, id: string, data: FormData): Promise<Document<T & BaseDoc>>;
+    /** Create record using a object literal. Cannot upload files. */
+    <T>(collection: Collection<T>, id: string, data: Document<T & BaseDoc>): Promise<Document<T & BaseDoc>>;
+}
+
+export const update: Update = async(collection, id, data) => {
+    if (!pocketBaseURL) throw new Error("init has not been called");
+
+    const options: RequestData = { };
+
+    if (data.constructor == FormData) options.form = data;
+    else options.body = data;
+
+    return await request(`${collection.path}/${id}`, options, "POST");
+}
+
+//#endregion
+
+//#region delete
 
 export const del = async <T>(collection: Collection<T>, id: string): Promise<any> => {
     if (!pocketBaseURL) throw new Error("init has not been called");
-
-    const path = `collections/${collection.identifier}/records/${id}`;
-    const res = await request(path, {}, "DELETE");
-    const json = await res.json();
-
-    return json;
+    return await request(`${collection.path}/${id}`, {}, "DELETE");
 }
 
-type ListOptions = {
-    page?: number;
-    perPage?: number;
-    sort?: string;
-    filter?: string;
-};
+//#endregion
 
-type ListResult<T> = {
+//#region list
+
+type ListShared = {
     page: number;
     perPage: number;
+}
+
+type ListOptions = Partial<ListShared & {
+    sort?: string;
+    filter?: string;
+}>;
+
+type ListResult<T> = ListShared & {
     totalItems: number;
     totalPages: number;
     items: T[];
 }
 
-export const list = async <T>(collection: Collection<T>, options?: ListOptions): Promise<ListResult<Document<T & BaseDoc>>> => {
+export const list = async <T extends Resource>(resource: T, options?: ListOptions): Promise<ListResult<ExtractCollectionGeneric<T>>> => {
     if (!pocketBaseURL) throw new Error("init has not been called");
-
-    const path = `collections/${collection.identifier}/records/`;
-    const res = await request(path, { params: options });
-    const json = await res.json();
-    
-    return json;
+    return await request(resource.path, { params: options });
 }
+
+//#endregion
 
 // const Operators = ["=", "!=", ">", ">=", "<", "<=", "~", "!~"] as const;
 // type Operators = typeof Operators[number];

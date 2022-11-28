@@ -17,32 +17,17 @@ export type SchemaField = {
     options: Record<string, any>;
 };
 
-export type SchemaFieldType<T> =
-    T extends Optional<"bool"> ? Optional<boolean> :
-    T extends Optional<"date"> ? Optional<string> :
-    T extends Optional<"email"> ? Optional<string> :
-    T extends Optional<"file"> ? Optional<string[]> :
-    T extends Optional<"json"> ? Optional<any> :
-    T extends Optional<"number"> ? Optional<number> :
-    T extends Optional<"relation"> ? Optional<string[]> :
-    T extends Optional<"select"> ? Optional<string[]> :
-    T extends Optional<"text"> ? Optional<string> :
-    T extends Optional<"url"> ? Optional<string> :
-    T extends "bool" ? boolean :
-    T extends "date" ? string :
-    T extends "email" ? string :
-    T extends "file" ? string[] :
-    T extends "json" ? any :
+type GetType<T> =
+    T extends "text" | "url" | "date" | "email" ? string :
+    T extends "file" | "relation" | "select" ? string[] :
     T extends "number" ? number :
-    T extends "relation" ? string[] :
-    T extends "select" ? string[] :
-    T extends "text" ? string :
-    T extends "url" ? string :
+    T extends "bool" ? boolean :
+    T extends "json" ? any :
     never;
 
-export type Field<T, R> = {
-    type: T;
-}
+export type SchemaFieldType<T> = T extends Optional<infer X> ? Optional<GetType<X>> : GetType<T>;
+
+export type Field<T, R> = { type: T };
 
 type FieldType<O, T, R> = {
     (options?: OptionalField & Partial<ExtraField & O>): Optional<Field<T, R>>;
