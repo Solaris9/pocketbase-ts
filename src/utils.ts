@@ -33,8 +33,6 @@ export const request = async <T>(path: string, data: RequestData, method = "GET"
         (options.headers as any)["Authorization"] = authStore.token;
 
     const res = await fetch(`${pocketBaseURL}${path}?${query}`, options);
-    if (!res.ok) throw new Error(res.statusText);
-
     const json = await res.json();
     if (json.code) throw new Error(json.message);
 
