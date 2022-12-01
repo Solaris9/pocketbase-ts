@@ -10,7 +10,8 @@ export {
     requestVerification,
     confirmVerification,
     listAuth,
-    unlinkAuth
+    unlinkAuth,
+    authStore
 } from "./auth";
 
 export {
