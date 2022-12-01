@@ -1,4 +1,6 @@
-import { ExtractCollectionGeneric, Resource } from "./client";
+import { Admins, AdminsCollection } from "./client";
+import { Collection } from "./collection";
+import { Schema, ExtractSchemaGeneric } from "./schema";
 import { request } from "./utils"
 
 type AuthStore = {
@@ -30,8 +32,10 @@ export type AuthMethodsResult = {
     authProviders: AuthMethod[]
 };
 
-export const authMethods = async<T extends Resource>(resource: T): Promise<AuthMethodsResult> => {
-    return await request(`${resource.path}/auth-methods`, {});
+export const authMethods = async<T extends Collection<unknown>>(
+    collection: T
+): Promise<AuthMethodsResult> => {
+    return await request(`${collection.path}/auth-methods`, {});
 }
 
 export type AuthenticationResult<T> = {
@@ -40,17 +44,17 @@ export type AuthenticationResult<T> = {
     meta?: any;
 };
 
-export const authPassword = async <T extends Resource>(
-    resource: T,
+export const authPassword = async <T extends Collection<Schema<unknown>>>(
+    collection: T,
     identity: string,
     password: string
-): Promise<AuthenticationResult<ExtractCollectionGeneric<T>>> => {
+): Promise<AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>> => {
     const options = { body: { identity, password } };
-    type Return = AuthenticationResult<ExtractCollectionGeneric<T>>;
-    const json = await request<Return>(`${resource.path}/auth-with-password`, options, "POST");
+    type Return = AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>;
+    const json = await request<Return>(`${collection.path}/auth-with-password`, options, "POST");
 
     authStore.token = json.token;
-    if (resource.admin) authStore.admin = true;
+    if (collection instanceof AdminsCollection) authStore.admin = true;
 
     return json;
 }
@@ -62,44 +66,53 @@ export type OAuth2Payload = {
     redirectUrl: string;
 }
 
-export const authOAuth2 = async<T extends Resource>(
-    resource: T,
+export const authOAuth2 = async <T extends Collection<Schema<unknown>>>(
+    collection: T,
     payload: OAuth2Payload,
-    data?: ExtractCollectionGeneric<T>
-): Promise<AuthenticationResult<ExtractCollectionGeneric<T>>> => {
-    type Return = AuthenticationResult<ExtractCollectionGeneric<T>>;
+    data?: ExtractSchemaGeneric<T["schema"]>
+): Promise<AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>> => {
+    type Return = AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>;
     const options = { body: { ...payload, ...(data as any) } };
-    const json = await request<Return>(`${resource.path}/auth-with-password`, options, "POST");
+    const json = await request<Return>(`${collection.path}/auth-with-password`, options, "POST");
 
     authStore.token = json.token;
-    if (resource.admin) authStore.admin = true;
+    if (collection.constructor == (Admins as any)) authStore.admin = true;
 
     return json;
 }
 
-export const autoRefresh = async<T extends Resource>(resource: T) => {
-    type Return = AuthenticationResult<ExtractCollectionGeneric<T>>;
-    return await request<Return>(`${resource.path}/auto-refresh`, {});
+export const autoRefresh = async <T extends Collection<Schema<unknown>>>(collection: T) => {
+    type Return = AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>;
+    return await request<Return>(`${collection.path}/auto-refresh`, {});
 }
 
 //#endregion
 
 //#region verification
 
-export const requestVerification = async<T extends Resource>(resource: T, email: string) => {
-    await request(`${resource.path}/request-verification`, { body: { email } }, "POST");
+export const requestVerification = async<T extends Collection<unknown>>(
+    collection: T,
+    email: string
+) => {
+    await request(`${collection.path}/request-verification`, { body: { email } }, "POST");
 }
 
-export const confirmVerification = async<T extends Resource>(resource: T, token: string) => {
-    await request(`${resource.path}/confirm-verification`, { body: { token } }, "POST");
+export const confirmVerification = async<T extends Collection<unknown>>(
+    collection: T,
+    token: string
+) => {
+    await request(`${collection.path}/confirm-verification`, { body: { token } }, "POST");
 }
 
 //#endregion
 
 //#region password
 
-export const requestPasswordReset = async<T extends Resource>(resource: T, email: string) => {
-    return await request(`${resource.path}/request-password-reset`, { body: { email } }, "POST");
+export const requestPasswordReset = async<T extends Collection<unknown>>(
+    collection: T,
+    email: string
+) => {
+    return await request(`${collection.path}/request-password-reset`, { body: { email } }, "POST");
 }
 
 type ConfirmPasswordResetPayload = {
@@ -108,32 +121,47 @@ type ConfirmPasswordResetPayload = {
     passwordConfirm: string;
 }
 
-export const confirmPasswordReset = async<T extends Resource>(resource: T, payload: ConfirmPasswordResetPayload) => {
-    await request(`${resource.path}/confirm-password-reset`, { body: payload }, "POST");
+export const confirmPasswordReset = async<T extends Collection<unknown>>(
+    collection: T,
+    payload: ConfirmPasswordResetPayload
+) => {
+    await request(`${collection.path}/confirm-password-reset`, { body: payload }, "POST");
 }
 
 //#endregion
 
 //#region email
 
-export const requestEmailChange = async<T extends Resource>(resource: T, newEmail: string) => {
-    await request(`${resource.path}/request-email-change`, { body: { newEmail } }, "POST");
+export const requestEmailChange = async<T extends Collection<unknown>>(
+    collection: T,
+    newEmail: string
+) => {
+    await request(`${collection.path}/request-email-change`, { body: { newEmail } }, "POST");
 }
 
-export const confirmEmailChange = async<T extends Resource>(resource: T, token: string, password: string) => {
-    await request(`${resource.path}/confirm-email-change`, { body: { token, password } }, "POST");
+export const confirmEmailChange = async<T extends Collection<unknown>>(
+    collection: T,
+    token: string,
+    password: string
+) => {
+    await request(`${collection.path}/confirm-email-change`, { body: { token, password } }, "POST");
 }
 
 //#endregion
 
 //#region external auth
 
-export const listAuth = async<T extends Resource>(resource: T) => {
-    return await request(`${resource.path}/${authStore.id}/external-auths`, {});
+export const listAuth = async<T extends Collection<unknown>>(
+    collection: T
+) => {
+    return await request(`${collection.path}/${authStore.id}/external-auths`, {});
 }
 
-export const unlinkAuth = async<T extends Resource>(resource: T, provider: string) => {
-    return await request(`${resource.path}/${authStore.id}/external-auths/${provider}`, {}, "DELETE");
+export const unlinkAuth = async<T extends Collection<unknown>>(
+    collection: T,
+    provider: string
+) => {
+    return await request(`${collection.path}/${authStore.id}/external-auths/${provider}`, {}, "DELETE");
 }
 
 //#endregion

@@ -8,16 +8,7 @@ export type OptionalField = { required?: false };
 // export type Optional<T> = T;
 export type Optional<T> = { _?: T };
 
-export type SchemaField = {
-    id: string;
-    title: string;
-    type: string;
-    required: boolean;
-    system: boolean;
-    options: Record<string, any>;
-};
-
-type GetType<T> =
+export type GetType<T> =
     T extends "text" | "url" | "date" | "email" ? string :
     T extends "file" | "relation" | "select" ? string[] :
     T extends "number" ? number :
