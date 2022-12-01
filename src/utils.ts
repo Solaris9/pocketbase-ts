@@ -6,11 +6,16 @@ export const select = <T, K extends keyof T = keyof T>(object: T, keys: K[]): Re
 
 export const omit = <T extends Record<string, any>, K extends keyof T>(obj: T | undefined, keys: K[]) => {
     if (!obj) return {};
-    Object.keys(obj).forEach(k => delete obj[k]);
+    keys.forEach(k => delete obj[k]);
     return obj;
 }
 
 export type RequestData = { params?: object, body?: object, form?: FormData, headers?: Record<string, string> };
+export type RequestResult = {
+    code: number;
+    message: string;
+    data: Record<string, unknown>
+};
 
 export const request = async <T>(path: string, data: RequestData, method = "GET"): Promise<T> => {
     const options: RequestInit = { method, headers: data.headers };
@@ -32,7 +37,9 @@ export const request = async <T>(path: string, data: RequestData, method = "GET"
     if (authStore.token && authStore.admin)
         (options.headers as any)["Authorization"] = authStore.token;
 
-    const res = await fetch(`${pocketBaseURL}${path}?${query}`, options);
+    const url = `${pocketBaseURL}${path}?${query}`;
+    
+    const res = await fetch(url, options);
     const json = await res.json();
     if (json.code) throw new Error(json.message);
 

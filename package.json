@@ -1,8 +1,17 @@
 {
-  "name": "pocketbase-orm",
-  "version": "1.0.0",
+  "name": "pocketbase-ts",
+  "version": "0.0.1",
   "main": "dist/index.js",
   "license": "MIT",
+  "scripts": {
+    "build": "yarn tsc",
+    "prepublish": "build"
+  },
+  "author": {
+    "name": "Solaris9"
+  },
+  "repository":  "github:Solaris9/pocketbase-ts",
+  "bugs": "https://github.com/Solaris9/pocketbase-ts/issues",
   "dependencies": {},
   "devDependencies": {
     "type-fest": "^3.2.0",

@@ -1,4 +1,4 @@
-# pocketbase orm
+# pocketbase-ts
 
 Note: This is a work in progress, this should not be used until it close to release.
 
@@ -19,13 +19,15 @@ A simplified PocketBase SDK to ease the developer experience.
 - [ ] Add Settings collection
 - [ ] Add Logs collection
 - [ ] Add import collection
+- [ ] Add good error handling
+- [ ] Finish schema validation
 
 ## Usage
 
 This is using the demo on the [pocketbase.io](https://pocketbase.io/demo) site.
 
 ```typescript
-import { init, collection, list, Schema, Type, authPassword, Admins } from "pocketbase-orm";
+import { init, collection, list, Schema, Type, authPassword, Admins } from "pocketbase-ts";
 
 async function main() {
     init("https://pocketbase.io");
@@ -52,25 +54,25 @@ main();
 
 The API is designed like `action (...arguments)`
 
-To get data you use the `get` function.
+To get a record by ID you use the `get` function.
 
 ```ts
 await get(Users, "id of record");
 ```
 
-To find data you use the `find` function.
+To find one record you use the `find` function.
 
 ```ts
 await find(Users, { filter: "likes>10" });
 ```
 
-To create data you use the `create` function.
+To create a record you use the `create` function.
 
 ```ts
 await create(Users, { name: "Solaris9" });
 ```
 
-To list data you use the `list` function.
+To list paginated records you use the `list` function.
 
 ```ts
 await list(Users, { sort: "created" });

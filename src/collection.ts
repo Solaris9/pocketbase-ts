@@ -1,9 +1,11 @@
 import { pocketBaseURL, Resource } from "./client";
 import { Document, ExtractSchemaGeneric, Schema } from "./schema";
 import { Optional } from "./types";
-import { request, RequestData } from "./utils";
+import { request, RequestData, RequestResult } from "./utils";
 
 //#region collection
+
+export const collections = new Map<string, Collection<unknown>>();
 
 export type ExtractCollectionGeneric<T extends Collection<unknown>> = T extends Collection<infer X> ? X : never
 
@@ -35,11 +37,24 @@ export class Collection<T> implements Resource {
         this.schema = schema;
         this.identifier = identifier;
         this.type = type;
+
+        if (this.identifier) collections.set(this.identifier, this);
+    }
+
+    toJSON() {
+        const definition = (this.schema as Schema<any>).definition;
+        const fields = Object.keys(definition).map(k => ({ ...definition[k], name: k }));
+
+        return {
+            name: this.identifier,
+            type: this.type,
+            schema: fields,
+        }
     }
 };
 
-export const collection = <T extends Schema<unknown>>(identifier: string, schema: T, type: CollectionType = "base"): Collection<T> =>
-    new Collection<T>(`/api/collections/${identifier}/records`, schema, identifier, type);
+export const collection = <T extends Schema<unknown>>(identifier: string, schema: T, type: CollectionType = "base"): Collection<T> => 
+     new Collection<T>(`/api/collections/${identifier}/records`, schema, identifier, type);
 
 //#endregion
 
@@ -64,9 +79,12 @@ type ListResult<T> = ListShared & {
 export const list = async <T extends Collection<Schema<unknown>>>(
     collection: T,
     options?: ListOptions
-): Promise<ListResult<Document<ExtractSchemaGeneric<T["schema"]>>>> => {
+): Promise<ListResult<Document<ExtractSchemaGeneric<T["schema"]>>> | null> => {
     if (!pocketBaseURL) throw new Error("init has not been called");
-    return await request(collection.path, { params: options });
+    const json = await request<RequestResult>(collection.path, { params: options });
+    if (json.code == 404) return null;
+    if (json.code >= 400) throw json.message;
+    return json as unknown as ListResult<Document<ExtractSchemaGeneric<T["schema"]>>>
 };
 
 //#endregion
@@ -76,9 +94,11 @@ export const list = async <T extends Collection<Schema<unknown>>>(
 export const get = async <T extends Collection<Schema<unknown>>>(
     collection: T,
     id: string
-): Promise<Document<ExtractSchemaGeneric<T["schema"]>>> => {
+): Promise<Document<ExtractSchemaGeneric<T["schema"]>> | null> => {
     if (!pocketBaseURL) throw new Error("init has not been called");
-    return await request(`${collection.path}/${id}`, {});
+    const json = await request<RequestResult>(`${collection.path}/${id}`, {});
+    if (json.code == 404) return null;
+    return json as unknown as Document<ExtractSchemaGeneric<T["schema"]>>;
 }
 
 //#endregion
@@ -88,10 +108,10 @@ export const get = async <T extends Collection<Schema<unknown>>>(
 export const find = async <T extends Collection<Schema<unknown>>>(
     collection: T,
     options: Omit<ListOptions, "page" | "perPage">
-): Promise<Document<ExtractSchemaGeneric<T["schema"]>>> => {
+): Promise<Document<ExtractSchemaGeneric<T["schema"]>> | null> => {
     if (!pocketBaseURL) throw new Error("init has not been called");
     const results = await list(collection, options);
-    return results.items[0];
+    return results?.items[0] || null;
 }
 
 //#endregion
@@ -116,18 +136,6 @@ export const create: Create = async(collection, data) => {
     
     const options: RequestData = {};
 
-    // if (collection.constructor == Collection && data.constructor == Collection) {
-    //     const fields: SchemaField[] = Object.keys(collection.schema).map(k => ({
-    //         ...(data as Record<any, any>)[k],
-    //         name: k,
-    //     }));
-    
-    //     options.body = {
-    //         name: data.identifier,
-    //         type: "base",
-    //         schema: fields,
-    //     }
-    // } else
     if (data.constructor == FormData) {
         options.form = data;
     } else {

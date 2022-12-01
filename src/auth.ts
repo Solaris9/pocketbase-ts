@@ -1,19 +1,25 @@
-import { Admins, AdminsCollection } from "./client";
-import { Collection } from "./collection";
+import { AdminsCollection } from "./client";
+import { BaseDocument, Collection } from "./collection";
 import { Schema, ExtractSchemaGeneric } from "./schema";
 import { request } from "./utils"
 
-type AuthStore = {
-    id: string | null;
-    token: string | null;
-    admin: boolean;
+class AuthStore {
+    user: BaseDocument | null = null;
+    token: string | null = null;
+    admin: boolean = false;
+
+    get loggedIn() {
+        return !!this.token;
+    }
+
+    logout() {
+        this.user = null;
+        this.token = null;
+        this.admin = false;
+    }
 }
 
-export let authStore: AuthStore = {
-    id: null,
-    token: null,
-    admin: false,
-}
+export let authStore = new AuthStore();
 
 //#region auth
 
@@ -50,10 +56,11 @@ export const authPassword = async <T extends Collection<Schema<unknown>>>(
     password: string
 ): Promise<AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>> => {
     const options = { body: { identity, password } };
-    type Return = AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>;
+    type Return = AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>;    
     const json = await request<Return>(`${collection.path}/auth-with-password`, options, "POST");
 
     authStore.token = json.token;
+    authStore.user = json.record as BaseDocument;
     if (collection instanceof AdminsCollection) authStore.admin = true;
 
     return json;
@@ -76,7 +83,8 @@ export const authOAuth2 = async <T extends Collection<Schema<unknown>>>(
     const json = await request<Return>(`${collection.path}/auth-with-password`, options, "POST");
 
     authStore.token = json.token;
-    if (collection.constructor == (Admins as any)) authStore.admin = true;
+    authStore.user = json.record as BaseDocument;
+    if (collection instanceof AdminsCollection) authStore.admin = true;
 
     return json;
 }
@@ -154,14 +162,16 @@ export const confirmEmailChange = async<T extends Collection<unknown>>(
 export const listAuth = async<T extends Collection<unknown>>(
     collection: T
 ) => {
-    return await request(`${collection.path}/${authStore.id}/external-auths`, {});
+    if (!authStore.loggedIn) throw new RangeError("Not logged in.");
+    return await request(`${collection.path}/${authStore.user!.id}/external-auths`, {});
 }
 
 export const unlinkAuth = async<T extends Collection<unknown>>(
     collection: T,
     provider: string
 ) => {
-    return await request(`${collection.path}/${authStore.id}/external-auths/${provider}`, {}, "DELETE");
+    if (!authStore.loggedIn) throw new RangeError("Not logged in.");
+    return await request(`${collection.path}/${authStore.user!.id}/external-auths/${provider}`, {}, "DELETE");
 }
 
 //#endregion
