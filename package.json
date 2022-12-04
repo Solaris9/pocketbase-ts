@@ -10,11 +10,10 @@
   "author": {
     "name": "Solaris9"
   },
-  "repository":  "github:Solaris9/pocketbase-ts",
+  "repository": "github:Solaris9/pocketbase-ts",
   "bugs": "https://github.com/Solaris9/pocketbase-ts/issues",
   "dependencies": {},
   "devDependencies": {
-    "type-fest": "^3.2.0",
     "typescript": "^4.9.3"
   }
 }
