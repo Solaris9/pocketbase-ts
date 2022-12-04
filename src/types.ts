@@ -1,3 +1,4 @@
+import { SchemaField } from "./schema";
 import { omit } from "./utils";
 
 export type ExtraField = { unique: boolean; system: boolean };
@@ -18,15 +19,16 @@ export type GetType<T> =
 
 export type SchemaFieldType<T> = T extends Optional<infer X> ? Optional<GetType<X>> : GetType<T>;
 
-export type Field<T, R> = { type: T };
+export type Field<T> = SchemaField & { validate: (value: unknown) => boolean };
 
-type FieldType<O, T, R> = {
-    (options?: OptionalField & Partial<ExtraField & O>): Optional<Field<T, R>>;
-    (options?: RequiredField & Partial<ExtraField & O>): Field<T, R>;
+type FieldType<O, T> = {
+    (options?: OptionalField & Partial<ExtraField & O>): Optional<Field<T>>;
+    (options?: RequiredField & Partial<ExtraField & O>): Field<T>;
 }
 
-const field = <O, R, T>(type: T): FieldType<O, T, R> => (options) => ({
+const field = <O, T>(type: T, validate: (value: unknown) => boolean): FieldType<O, T> => (options) => ({
     type,
+    validate,
     required: !!options?.required,
     unique: !!options?.unique,
     options: omit(options!, ["required", "unique", "system"])
@@ -41,15 +43,24 @@ type SelectOptions = Select & { choices: string[] };
 type FileOptions = Select & { maxSize: number; mimeTypes: string[]; thumbs: `${number}x${number}`[] };
 type RelationOptions = Select & { collectionId: string; cascadeDelete: boolean; };
 
+const isStringArray = (v: unknown) => Array.isArray(v) && v.every(i => typeof i == "string");
+
 export const Type = {
-    bool: field<{}, boolean, "bool">("bool"),
-    date: field<MinMax, string, "date">("date"),
-    email: field<Domains, string, "email">("email"),
-    file: field<FileOptions, string, "file">("file"),
-    json: field<{}, string, "json">("json"),
-    number: field<MinMax, number, "number">("number"),
-    relation: field<RelationOptions, string, "relation">("relation"),
-    select: field<SelectOptions, string[], "select">("select"),
-    text: field<TextOptions, string, "text">("text"),
-    url: field<Domains, string, "url">("url"),
+    bool: field<{}, "bool">("bool", v => Boolean(v)),
+    date: field<MinMax, "date">("date", v => isFinite(+(new Date(v as any)))),
+    email: field<Domains, "email">("email", v => /.+@.=\..+/.test(v as string)),
+    file: field<FileOptions, "file">("file",  isStringArray),
+    json: field<{}, "json">("json", () => true),
+    number: field<MinMax, "number">("number", v => typeof v == "number"),
+    relation: field<RelationOptions, "relation">("relation", isStringArray),
+    select: field<SelectOptions, "select">("select", isStringArray),
+    text: field<TextOptions, "text">("text", v => typeof v == "string"),
+    url: field<Domains, "url">("url", v => {
+        try {
+            new URL(v as any);
+            return true;
+        } catch {
+            return false;
+        }
+    }),
 };

@@ -14,8 +14,8 @@ export type ExtractSchemaGeneric<T extends Schema<unknown>> = T extends Schema<i
 export type ExtractOptionalGeneric<T> = T extends Optional<infer X> ? X : never;
 
 export type SimplifyFieldType<T> =
-    T extends Optional<Field<infer X,unknown>> ? Optional<X> :
-    T extends Field<infer X, unknown> ? X : T;
+    T extends Optional<Field<infer X>> ? Optional<X> :
+    T extends Field<infer X> ? X : T;
 
 export type RemoveOptional<T> = { [P in keyof T as T[P] extends Optional<unknown> ? never : P]: T[P] };
 export type RemoveRequired<T> = { [P in keyof T as T[P] extends Optional<unknown> ? P : never]: T[P] };
@@ -32,7 +32,7 @@ export type Document<T, R extends string = "", O extends string = "", E = BaseDo
 
 export type ExtractDocument<T extends Collection<unknown>> = Document<ExtractCollectionGeneric<T>>;
 
-type SchemaValidationType = "missing";
+type SchemaValidationType = "missing" | "failed";
 type SchemaValidationResult = null | {
     key: string;
     type: SchemaValidationType;
@@ -49,13 +49,13 @@ export class Schema<T> {
     }
 
     validate(data: Document<T, "id" | "created" | "updated">): SchemaValidationResult {
-        const definition = this.definition as Record<string, SchemaField>;
+        const definition = this.definition as Record<string, Field<unknown>>;
         const schemaKeys = Object.keys(definition);
 
         const requiredKeys = schemaKeys.filter(k => definition[k].required);
         const dataKeys = Object.keys(data);
 
-        if (!requiredKeys.every(k => dataKeys.includes(k))) {
+        if (requiredKeys.every(k => !dataKeys.includes(k))) {
             const missing = requiredKeys.filter(k => !dataKeys.includes(k));
             return missing.map(m => ({
                 type: "missing",
@@ -64,27 +64,25 @@ export class Schema<T> {
             }));
         }
 
-        // continue type check implementation
+        const errors: SchemaValidationResult = [];
+
+        for (let key in definition) {
+            const field = definition[key];
+            const value = (data as Record<string, unknown>)[key];
+            if (!field.required && typeof value == "undefined") continue;
+
+            if (!field.validate(value)) errors.push({
+                key,
+                type: "failed",
+                message: `Field is not of type '${field.type}'.`,
+                expected: field.type,
+                // TODO: transform typeof to pocketbase types, e.g. text, bool, select
+                received: typeof value,
+            });
+        }
+
+        if (errors.length) return errors;
 
         return null;
     }
 }
-
-// const getType = <T extends Field<string, unknown>>(field: T) => {
-//     if (["text", "url", "date", "email"].includes(field.type)) return "string";
-//     else if (["file", "relation", "select"].includes(field.type)) return "string[]";
-//     else if (field.type == "number") return "number";
-//     else if (field.type == "bool") return "boolean";
-//     else if (field.type == "json") return "json";
-        
-//     return null as never;
-// }
-
-// const UserSchema = new Schema({
-//     title: Type.text({ required: true }),
-//     description: Type.text(),
-// });
-
-// const res = UserSchema.validate({
-    
-// })
