@@ -26,8 +26,9 @@ export type SimplifyDocument<T> =
     { [K in keyof RemoveOptional<T>]: GetType<SimplifyFieldType<T[K]>> } &
     { [K in keyof RemoveRequired<T>]?: GetType<ExtractOptionalGeneric<SimplifyFieldType<T[K]>>> };
 
-export type Document<T, R extends string = "", E = BaseDocument> =
-    Omit<NormalizeDocument<SimplifyDocument<T>, E>, R>;
+export type Document<T, R extends string = "", O extends string = "", E = BaseDocument> =
+     Omit<NormalizeDocument<SimplifyDocument<T>, E>, R | O> &
+     { [K in keyof E as K extends O ? K : never]?: E[K] };
 
 export type ExtractDocument<T extends Collection<unknown>> = Document<ExtractCollectionGeneric<T>>;
 

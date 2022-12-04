@@ -122,7 +122,7 @@ type Create = {
     /** Create record using the schema definition. Cannot upload files. */
     <T extends Collection<Schema<unknown>>>(
         collection: T,
-        data: Document<ExtractSchemaGeneric<T["schema"]>, "updated" | "created">
+        data: Document<ExtractSchemaGeneric<T["schema"]>, "updated" | "created", "id">
     ): Promise<Document<ExtractSchemaGeneric<T["schema"]>>>;
     /** Create record using a FormData to upload files. */
     <T extends Collection<Schema<unknown>>>(
@@ -160,7 +160,7 @@ type Update = {
     <T extends Collection<Schema<unknown>>>(
         collection: T,
         id: string,
-        data: Partial<Document<ExtractSchemaGeneric<T["schema"]>, "created" | "updated" | "id">>
+        data: Partial<Document<ExtractSchemaGeneric<T["schema"]>, "created" | "updated", "id">>
     ): Promise<Document<ExtractSchemaGeneric<T["schema"]>>>;
 };
 
