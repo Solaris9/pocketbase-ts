@@ -1,4 +1,4 @@
-import { pocketBaseURL, Resource } from "./client";
+import { pocketBaseURL } from "./client";
 import { Document, ExtractSchemaGeneric, Schema } from "./schema";
 import { Optional } from "./types";
 import { request, RequestData, RequestResult } from "./utils";
@@ -26,7 +26,7 @@ export type BaseDocument = {
 
 export type CollectionType = "base" | "auth";
 
-export class Collection<T> implements Resource {
+export class Collection<T> {
     path: string;
     schema: T;
     identifier?: string;
@@ -177,11 +177,11 @@ export const update: Update = async (collection, id, data) => {
 
 //#endregion
 
-//#region delete
+//#region remove
 
-export const del = async <T extends Collection<unknown>>(collection: T, id: string): Promise<never> => {
+export const remove = async <T extends Collection<unknown>>(collection: T, id: string): Promise<void> => {
     if (!pocketBaseURL) throw new Error("init has not been called");
-    return await request(`${collection.path}/${id}`, {}, "DELETE");
+    await request(`${collection.path}/${id}`, {}, "DELETE");
 };
 
 //#endregion

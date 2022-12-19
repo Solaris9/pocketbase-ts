@@ -5,10 +5,6 @@ import { Type } from "./types";
 export let pocketBaseURL: string | null = null;
 export const init = (url: string) => pocketBaseURL = url;
 
-export abstract class Resource {
-    abstract path: string;
-};
-
 export const UserSchema = new Schema({
     username: Type.text(),
     email: Type.text(),

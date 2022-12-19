@@ -22,7 +22,7 @@ export {
     get,
     find,
     update,
-    del
+    remove
 } from "./collection";
 
 export { Type } from "./types";

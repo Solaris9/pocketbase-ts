@@ -41,7 +41,7 @@ export type AuthMethodsResult = {
 export const authMethods = async<T extends Collection<unknown>>(
     collection: T
 ): Promise<AuthMethodsResult> => {
-    return await request(`${collection.path}/auth-methods`, {});
+    return await request(`${collection.path}/auth-methods`);
 }
 
 export type AuthenticationResult<T> = {
@@ -91,7 +91,7 @@ export const authOAuth2 = async <T extends Collection<Schema<unknown>>>(
 
 export const autoRefresh = async <T extends Collection<Schema<unknown>>>(collection: T) => {
     type Return = AuthenticationResult<ExtractSchemaGeneric<T["schema"]>>;
-    return await request<Return>(`${collection.path}/auto-refresh`, {});
+    return await request<Return>(`${collection.path}/auto-refresh`);
 }
 
 //#endregion
@@ -163,7 +163,7 @@ export const listAuth = async<T extends Collection<unknown>>(
     collection: T
 ) => {
     if (!authStore.loggedIn) throw new RangeError("Not logged in.");
-    return await request(`${collection.path}/${authStore.user!.id}/external-auths`, {});
+    return await request(`${collection.path}/${authStore.user!.id}/external-auths`);
 }
 
 export const unlinkAuth = async<T extends Collection<unknown>>(

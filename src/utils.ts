@@ -17,7 +17,7 @@ export type RequestResult = {
     data: Record<string, unknown>
 };
 
-export const request = async <T>(path: string, data: RequestData, method = "GET"): Promise<T> => {
+export const request = async <T>(path: string, data: RequestData = {}, method = "GET"): Promise<T> => {
     const options: RequestInit = { method, headers: data.headers };
     const query = new URLSearchParams();
 
