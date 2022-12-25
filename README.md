@@ -53,7 +53,10 @@ main();
 
 ## Understanding the API
 
-The API is designed like `action (...arguments)`
+The API is designed like `action (...arguments)`.
+This is uniform across the rest of the api.
+
+## CRUD methods, aka Create, Read, Update, Delete
 
 To get a record by ID you use the `get` function.
 
@@ -79,7 +82,7 @@ To list paginated records you use the `list` function.
 await list(Users, { sort: "created" });
 ```
 
-This is uniform across the rest of the api.
+### Authentication
 
 Authenticating is similar using the authentications methods.
 
@@ -89,4 +92,31 @@ await authPassword(Admins, "test@example.com", "123456");
 
 await requestEmailChange(Admins, "test2@example.com");
 await confirmEmailChange(Admins, token, password);
+```
+
+### Realtime
+
+To subscribe to a Collection you use the `subscribe` method.
+
+```ts
+// subscribe to the Collection for all create, delete, and update actions
+subscribe(Posts, (action, record) => {
+    // code
+});
+
+// subscribe to the specific record for delete and update actions
+subscribe(Posts, "record-id", (action, record) => {
+    // code
+});
+```
+
+To unsubscribe from a subscription you can use `unsubscribe` or the method returned from `subscribe`
+
+```ts
+// subscribe to the Collection for all create, delete, and update actions
+const unsubscribe = await subscribe(Posts, (action, record) => {
+    // code
+});
+
+unsubscribe();
 ```
