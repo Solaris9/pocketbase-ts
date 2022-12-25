@@ -14,13 +14,14 @@ A simplified PocketBase SDK to ease the developer experience.
 - [ ] Finish rest of the PocketBase API
 - [x] Add authentication
 - [x] Clean up code significantly
-- [ ] Add realtime records
+- [x] Add realtime records
 - [x] Add base schema for Users & Admins
 - [ ] Add Settings collection
 - [ ] Add Logs collection
 - [ ] Add import collection
 - [ ] Add good error handling
-- [ ] Finish schema validation
+- [x] Finish schema validation
+- [ ] Potentially change from a singleton to instances?
 
 ## Usage
 

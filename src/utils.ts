@@ -17,6 +17,7 @@ export type RequestResult = {
     data: Record<string, unknown>
 };
 
+// TODO: likely change this to just return the Response
 export const request = async <T>(path: string, data: RequestData = {}, method = "GET"): Promise<T> => {
     const options: RequestInit = { method, headers: data.headers };
     const query = new URLSearchParams();
@@ -40,7 +41,11 @@ export const request = async <T>(path: string, data: RequestData = {}, method = 
     const url = `${pocketBaseURL}${path}?${query}`;
     
     const res = await fetch(url, options);
-    const json = await res.json();
+    const text = await res.text();
+    
+    if (!text) return undefined as T;
+
+    const json = JSON.parse(text);
     if (json.code) throw new Error(json.message);
 
     return json

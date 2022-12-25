@@ -41,3 +41,12 @@ export {
 export {
     Schema
 } from "./schema";
+
+export {
+    subscribe,
+    unsubscribe,
+    isConnected,
+    disconnect,
+    type Subscribe,
+    type Unsubscribe
+} from "./realtime";

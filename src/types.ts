@@ -30,6 +30,7 @@ const field = <O, T>(type: T, validate: (value: unknown) => boolean): FieldType<
     type,
     validate,
     required: !!options?.required,
+    system: !!options?.system,
     unique: !!options?.unique,
     options: omit(options!, ["required", "unique", "system"])
 }) as any;
