@@ -1,5 +1,5 @@
-import { BaseDocument, Collection, ExtractCollectionGeneric } from "./collection";
-import { Field, GetType, Optional } from "./types";
+import { Collection, type BaseDocument, type ExtractCollectionGeneric } from "./collection";
+import type { Field, GetType, Optional } from "./types";
 
 export type SchemaField = {
     id: string;
@@ -13,18 +13,14 @@ export type SchemaField = {
 export type ExtractSchemaGeneric<T extends Schema<unknown>> = T extends Schema<infer X> ? X : never
 export type ExtractOptionalGeneric<T> = T extends Optional<infer X> ? X : never;
 
-export type SimplifyFieldType<T> =
-    T extends Optional<Field<infer X>> ? Optional<X> :
-    T extends Field<infer X> ? X : T;
-
 export type RemoveOptional<T> = { [P in keyof T as T[P] extends Optional<unknown> ? never : P]: T[P] };
 export type RemoveRequired<T> = { [P in keyof T as T[P] extends Optional<unknown> ? P : never]: T[P] };
 
 export type NormalizeDocument<T, B> = T & { [K in keyof B as K extends keyof T ? never : K]: B[K] };
 
 export type SimplifyDocument<T> =
-    { [K in keyof RemoveOptional<T>]: GetType<SimplifyFieldType<T[K]>> } &
-    { [K in keyof RemoveRequired<T>]?: GetType<ExtractOptionalGeneric<SimplifyFieldType<T[K]>>> };
+    { [K in keyof RemoveOptional<T>]: T[K] extends Field<infer X> ? GetType<X> : never } &
+    { [K in keyof RemoveRequired<T>]?: T[K] extends Optional<Field<infer X>> ? GetType<X> : never };
 
 export type Document<T, R extends string = "", O extends string = "", E = BaseDocument> =
      Omit<NormalizeDocument<SimplifyDocument<T>, E>, R | O> &

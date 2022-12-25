@@ -19,7 +19,8 @@ export type GetType<T> =
 
 export type SchemaFieldType<T> = T extends Optional<infer X> ? Optional<GetType<X>> : GetType<T>;
 
-export type Field<T> = SchemaField & { validate: (value: unknown) => boolean };
+// TODO: fix again because i have no idea how to make this actually work without weird hacks like this
+export type Field<T> = SchemaField & { __?: T, validate: (value: unknown) => boolean };
 
 type FieldType<O, T> = {
     (options?: OptionalField & Partial<ExtraField & O>): Optional<Field<T>>;
